@@ -1,0 +1,16 @@
+﻿@{
+    ViewBag.Title = "DateMate";
+}
+
+<div id="content-top">
+@if (ViewBag.Heading != null && ViewBag.Message != null)
+{
+	@Html.Raw(ViewBag.Heading)
+	@Html.Raw(ViewBag.Message)
+}
+else
+{
+	<h1>Status</h1>
+	<p>Everything's a'ight.</p>
+}
+</div>

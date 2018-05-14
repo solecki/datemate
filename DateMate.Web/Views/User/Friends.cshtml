@@ -1,0 +1,129 @@
+﻿@model DateMate.Models.ViewModels.FriendsViewModel
+@{
+	ViewBag.Title = "Friends";
+}
+
+<div id="content-top">
+
+	@* Only show friend requests if the profile is the logged in user's profile. *@
+	@if (Model.LoggedInUser.Id == Model.ProfileUser.Id)
+	{
+	<h1>Friends</h1>
+
+		@* Pending friend requests. *@
+		if (Model.ReceivedPendingFriendRequests.Any())
+		{
+			foreach (var friendship in Model.ReceivedPendingFriendRequests)
+			{
+				using (Html.BeginForm("Friendship", "api", FormMethod.Post, new { @id = "friend-request-form-" + friendship.RequestById, @class = "friend-request-form" }))
+				{
+					@Html.ActionLink(friendship.RequestBy.ToString(), "ProfilePage", "User", new { id = friendship.RequestById }, null)
+					<button class="confirm" value="@friendship.RequestById" type="submit">Confirm</button>
+					<button class="reject" value="@friendship.RequestById" type="submit">Reject</button>
+				}
+				<div style="clear:both"></div>
+			}
+		}
+
+		@* Sent, pending friend requests. *@
+		if (Model.SentPendingFriendRequests.Any())
+		{
+			<h2>Awaiting response</h2>
+			<ul>
+			@foreach (var friendship in Model.SentPendingFriendRequests)
+			{
+				<li class="plain-list-item">@Html.ActionLink(friendship.RequestTo.ToString(), "ProfilePage", "User", new { id = friendship.RequestTo.Id }, null)</li>
+			}
+			</ul>
+		}
+	}
+	
+	@* Friend list. *@
+	<h2>@Model.ProfileUser.ToString()'s friends</h2>
+	<div id="friends">
+		<ul id="friend-list">
+
+		</ul>
+	</div>
+
+<script type="text/javascript">
+$(() => {
+	refreshFriendList(@Model.ProfileUser.Id);
+
+	// Regularly refresh the friend list.
+	setInterval(() => refreshFriendList(@Model.ProfileUser.Id), 10000);
+
+	$('button').click(function(e) {
+		e.preventDefault();
+		let formId = $(this).parent().attr('id'); // Form to remove when friend response button is clicked.
+		let friendshipId = parseInt($(this).attr('value'));
+		this.className == 'confirm' ? confirmFriend(friendshipId, formId) : rejectFriend(friendshipId, formId);
+	});
+
+	function confirmFriend(id, formId) {
+		let Friendship = {
+			RequestById: id,
+			RequestToId: @Model.LoggedInUser.Id,
+			Status: 2 // Represents confirmed friend status.
+		}
+
+		$.ajax({
+			url: '/api/Friendship/' + id,
+			type: 'PUT',
+			dataType: 'json',
+			data: JSON.stringify(Friendship),
+			contentType: 'application/json;charset=utf-8',
+			success: (res, status) => {
+				$('#' + formId).fadeOut(700);
+				// Update friend list.
+				refreshFriendList(@Model.ProfileUser.Id);
+				console.log(status);
+			},
+			error: xhr => console.log(xhr.status)
+		});
+	}
+
+	function rejectFriend(id, formId) {
+		$.ajax({
+			url: '/api/Friendship/' + id,
+			type: 'DELETE',
+			success: (res, status) => {
+				$('#' + formId).fadeOut(700);
+				// Update friends list.
+				refreshFriendList(@Model.ProfileUser.Id);
+				console.log(status);
+			},
+			error: xhr => console.log(xhr.status)
+		});
+	}
+
+	// Retrieve friendships and append them to the markup on success.
+	function refreshFriendList(userId) {
+		$.ajax({
+			url: '/api/Friendship/' + userId,
+			type: 'GET',
+			dataType: 'json',
+			success: (data, status) => {
+				displayFriendList(data);
+			},
+			error: xhr => console.log(xhr.status)
+		});
+	}
+
+	function displayFriendList(friends) {
+		let $context = $('#friend-list');
+		$context.empty();
+
+		if (friends.length > 0) {
+			for (var i = 0; i < friends.length; i++) {
+				$context.append(
+					`<li class="plain-list-item"><a href="/User/ProfilePage/${friends[i].UserId}">${friends[i].Name}</a></li>`
+				);
+			}
+		} else {
+			$context.append('<p>None, yet.</p>')
+		}
+	}
+});
+</script>
+</div>

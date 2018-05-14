@@ -1,0 +1,103 @@
+﻿@* Model (friendships) that will be used in every page if user is logged in. *@
+@using DateMate.Models.ViewModels;
+@{
+	var layoutViewModel = (LayoutViewModel)ViewBag.LayoutViewModel;
+}
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<link rel="icon" href="/favicon.ico" type="image/x-icon">
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>@ViewBag.Title</title>
+		@Styles.Render("~/Content/css")
+		@Scripts.Render("~/bundles/modernizr")
+		@Scripts.Render("~/bundles/jquery")
+	</head>
+	<body>
+		<div id="grid">
+			<div id="header">
+			</div>
+			<nav id="menu-wrapper">
+				<span id="hamburger-icon"></span>
+				<ul id="menu">
+					<li>
+						@Html.ActionLink(Resources.Global.Home, "Index", "Home", null, htmlAttributes: new { @class = "menu-item" })
+					</li>
+
+				@if (User.Identity.IsAuthenticated)
+				{
+					@* Logged in menu. *@
+					<li>
+						@Html.ActionLink(Resources.Global.Profile, "Index", "User", null, htmlAttributes: new { @class = "menu-item" })
+					</li>
+
+					@* Create string with number of unconfirmed requests to display inside friends menu item. *@
+					var numOfUnconfirmedRequests = "";
+					if (layoutViewModel != null && layoutViewModel.ReceivedPendingFriendRequests.Any())
+					{
+						numOfUnconfirmedRequests = " (" + layoutViewModel.ReceivedPendingFriendRequests.Count() + ")";
+					}
+
+					<li>
+						@* Static markup 'cause actionlink automatically sets route value otherwise, even though it's explicitly null. *@
+						<a class="menu-item" href="/User/Friends">@Resources.Global.Friends @numOfUnconfirmedRequests</a>
+					</li>
+					<li>
+						@Html.ActionLink(Resources.Global.Settings, "Edit", "User", null, htmlAttributes: new { @class = "menu-item" })
+					</li>
+				}
+				else
+				{
+					@* Logged out menu. *@
+					<li>
+						@Html.ActionLink(Resources.Global.Register, "Register", "User", null, htmlAttributes: new { @class = "menu-item"} )
+					</li>
+					<li>
+						@Html.ActionLink(Resources.Global.Login, "Login", "User", null, htmlAttributes: new { @class = "menu-item" })
+					</li>
+				}
+				</ul>
+			</nav>
+			<div id="search">
+				<form method="get" action="/Search">
+					<input type="search" name="q" placeholder="Find dates..." />
+				</form>
+			</div>
+			<div id="content-grid">
+			<aside id="sidebar">
+			@if (User.Identity.IsAuthenticated)
+			{
+				@* Logged in sidebar. *@
+				<p>Signed in as <em>@User.Identity.Name</em> [<a href="/User/Logout">logout</a>]</p>
+			}
+			else
+			{
+				<img src="/Content/Media/ad.gif" alt="10^9:th visitor" />
+			}
+			</aside>
+
+			@* Attention: Renderbody. *@
+			@RenderBody()
+
+			</div>
+			<footer id="bottom">
+				<div id="footer-content">
+					<a href="#"><div id="twitter-icon"></div></a>
+					<a href="#"><div id="rss-icon"></div></a>
+					<a href="#"><div id="facebook-icon"></div></a>
+					<a href="#"><div id="youtube-icon"></div></a>
+					<a href="#"><div id="email-icon"></div></a>
+					<p>Copyleft &copy; @DateTime.Now.Year DateMate</p>
+				</div>
+			</footer>
+		</div>
+		@Scripts.Render("~/bundles/custom")
+		@if (IsSectionDefined("scripts"))
+		{
+			@RenderSection("scripts")
+		}
+	</body>
+</html>

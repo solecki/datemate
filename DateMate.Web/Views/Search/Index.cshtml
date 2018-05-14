@@ -1,0 +1,52 @@
+﻿@model IEnumerable<DateMate.Entities.User>
+
+@{
+	ViewBag.Title = "Search results";
+}
+<div id="content-top">
+	<h1>Search results for "@ViewBag.SearchString"</h1>
+
+@if (!Model.Any())
+{
+	<p>No users found.</p>
+}
+else
+{
+	@* Display found users. *@
+	<table class="table">
+		<tr>
+			<th>
+				@Html.DisplayNameFor(model => model.LoginName)
+			</th>
+			<th>
+				@Html.DisplayNameFor(model => model.FirstName)
+			</th>
+			<th>
+				@Html.DisplayNameFor(model => model.Surname)
+			</th>
+			<th>
+				@Html.DisplayNameFor(model => model.BirthDate)
+			</th>
+		</tr>
+
+	@foreach (var item in Model)
+	{
+		<tr>
+			<td>
+				@Html.ActionLink(item.LoginName, "ProfilePage", "User", new { id = item.Id }, null)
+			</td>
+			<td>
+				@Html.DisplayFor(modelitem => item.FirstName)
+			</td>
+			<td>
+				@Html.DisplayFor(modelItem => item.Surname)
+			</td>
+			<td>
+				@Html.DisplayFor(modelItem => item.BirthDate)
+			</td>
+		</tr>
+	}
+	</table>
+}
+
+</div>

@@ -1,0 +1,39 @@
+﻿@model IEnumerable<DateMate.Entities.User>
+
+@{
+	ViewBag.Title = "DateMate";
+}
+<div id="content-top">
+	<blockquote cite="http://foo.bar">
+		<h1 id="welcome-quote">
+			<span class="double-quote">&ldquo;</span>Whenever I'm in the mood for some juicy fucboi, I <strong>know</strong> I can count on DateMate to provide the <strong>thickest</strong>, chub 'n' tucked FUPAs.<span class="double-quote">&rdquo;</span>
+		</h1>
+	</blockquote>
+</div>
+<div id="content-bottom">
+	<h1>Fresh singles</h1>
+	<p>
+		Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean at auctor metus. Suspendisse placerat, turpis quis convallis efficitur, <strong>ante magna tempus</strong> lacus, vitae hendrerit felis augue sit amet ante. Duis sed malesuada libero. Vestibulum quis tempor nibh, quis efficitur orci. Donec <a href="#">ultrices magna eu</a> facilisis vehicula. Aenean interdum libero ipsum, nec maximus leo suscipit non. Nulla facilisi. In sed justo libero. Cras pretium ullamcorper lobortis. Donec sollicitudin euismod maximus.
+	</p>
+	<div id="singles-frontpage">
+
+	@foreach (var user in Model)
+	{
+		<a href="/User/ProfilePage/@user.Id">	
+		<div class="front-page-user">
+
+		@if (user.Picture == null)
+		{
+			<img src="~/Content/Media/Profile-pictures/profile-placeholder.gif" alt="profile picture" />
+			<p>@user.LoginName</p>
+		}
+		else
+		{
+			<img src="~/Content/Media/Profile-pictures/@user.Picture.FileName" alt="profile picture" />
+			<p>@user.LoginName</p>
+		}
+		</div>
+		</a>
+	}
+	</div>
+</div>

@@ -1,0 +1,208 @@
+﻿@model DateMate.Models.ViewModels.ProfilePageViewModel
+@using DateMate.Models.ViewModels
+
+<div id="content-top">
+	@if (Model.ProfileUser != null)
+	{
+		ViewBag.Title = Model.ProfileUser.LoginName + "'s profile";
+		var layoutViewModel = (LayoutViewModel)ViewBag.LayoutViewModel;
+		bool friendshipExists = false;
+
+		@* Determine if friendship exists between the profile user and the logged in user. *@
+		foreach (var friendship in Model.AllFriendships)
+		{
+			friendshipExists = Model.AllFriendships
+				.Where(f =>
+					(f.RequestById == Model.ProfileUser.Id && f.RequestToId == Model.LoggedInUser.Id) ||
+					(f.RequestById == Model.LoggedInUser.Id && f.RequestToId == Model.ProfileUser.Id))
+				.Any();
+		}
+
+		@* Display profile information *@
+		<h1>@Model.ProfileUser.ToString()'s profile</h1>
+
+		if (!friendshipExists && Model.ProfileUser.Id != Model.LoggedInUser.Id)
+		{
+			@* Display friend request button. *@
+			using (Html.BeginForm("Friendship", "api", FormMethod.Post, new { @id = "friend-request-form", @class = "friend-request-form" }))
+			{
+				<button id="add-friend" value="@Model.ProfileUser.Id" type="submit">Add friend</button>
+			}
+
+		}
+
+		if (Model.ProfileUser.Picture != null)
+		{
+			<a href="~/Content/Media/Profile-pictures/@Model.ProfileUser.Picture.FileName"><img src="~/Content/Media/Profile-pictures/@Model.ProfileUser.Picture.FileName" class="profile-picture" alt="profile picture" /></a>
+		}
+		else
+		{
+			<img src="~/Content/Media/Profile-pictures/profile-placeholder.gif" class="profile-picture" alt="profile picture" />
+		}
+
+		<dl class="dl-horizontal">
+			<dt>
+				@Html.DisplayNameFor(model => model.ProfileUser.FirstName)
+			</dt>
+
+			<dd>
+				@Html.DisplayFor(model => model.ProfileUser.FirstName)
+			</dd>
+
+			<dt>
+				@Html.DisplayNameFor(model => model.ProfileUser.Surname)
+			</dt>
+
+			<dd>
+				@Html.DisplayFor(model => model.ProfileUser.Surname)
+			</dd>
+
+			<dt>
+				@Html.DisplayNameFor(model => model.ProfileUser.LoginName)
+			</dt>
+
+			<dd>
+				@Html.DisplayFor(model => model.ProfileUser.LoginName)
+			</dd>
+
+			<dt>
+				@Html.DisplayNameFor(model => model.ProfileUser.BirthDate)
+			</dt>
+
+			<dd>
+				@Html.DisplayFor(model => model.ProfileUser.BirthDate)
+			</dd>
+		</dl>
+
+		@Html.ActionLink(Model.ProfileUser.ToString() + "'s friends", "Friends", new { id = Model.ProfileUser.Id } )
+		<br /><br />
+
+		@* Section for posting message on user's wall. *@
+		<h2>Write something</h2>
+
+		using (Html.BeginForm("Message", "api", FormMethod.Post, new { @id = "message-form" }))
+		{
+			<div class="form-horizontal">
+				<div class="form-group">
+					@Html.TextArea("text", "", 10, 10, htmlAttributes: new { @placeholder = "Write your message..." })
+				</div>
+				<div class="form-group">
+					<input type="submit" value="Post" class="btn btn-default" />
+				</div>
+			</div>
+		}
+
+		<h2 id="messages-heading"></h2>
+		<div id="messages">
+
+		</div>
+
+		<script type="text/javascript">
+$(() => {
+	refreshMessages(@Model.ProfileUser.Id);
+
+	// Regularly refresh user's messages.
+	setInterval(() => refreshMessages(@Model.ProfileUser.Id), 10000);
+
+	// Send friend request event.
+	$('#friend-request-form').submit(e => {
+		e.preventDefault();
+		let profileUserId = parseInt($('#add-friend').attr('value'));
+		addFriend(profileUserId);
+	});
+
+	function addFriend(id) {
+		let Friendship = {
+			RequestById: @Model.LoggedInUser.Id,
+			RequestToId: id,
+			status: 1 // Represents a pending friendship status.
+		}
+
+		$.ajax({
+			url: '/api/Friendship',
+			type: 'POST',
+			dataType: 'json',
+			data: JSON.stringify(Friendship),
+			contentType: 'application/json;charset=utf-8',
+			success: (res, status) => {
+				$('#friend-request-form').fadeOut(700);
+			},
+			error: xhr => console.log(xhr.status)
+		});
+	}
+
+	// Message submit event.
+	$('#message-form').submit(e => {
+		e.preventDefault();
+
+		if (!$.trim($('#text').val())) {
+			alert('You have to enter a message.');
+		} else {
+			sendMessage();
+		}
+	});
+
+	// Post message to profile.
+	function sendMessage() {
+		let Message = {
+			ToId: @Model.ProfileUser.Id,
+			UserId: @Model.LoggedInUser.Id,
+			Text: $('#text').val()
+		};
+
+		$.ajax({
+			url: '/api/Message',
+			type: 'POST',
+			dataType: 'json',
+			data: JSON.stringify(Message),
+			contentType: 'application/json;charset=utf-8',
+			success: (res, status) => {
+				$('#text').val('');
+				refreshMessages(@Model.ProfileUser.Id);
+			},
+			error: xhr => console.log(xhr.status)
+		});
+	}
+
+	// Retrieve new messages and append them to the markup on success.
+	function refreshMessages(userId) {
+		$.ajax({
+			url: '/api/Message/' + userId,
+			type: 'GET',
+			dataType: 'json',
+			success: (data, status) => {
+				displayMessages(data);
+			},
+			error: xhr => console.log(xhr.status)
+		});
+	}
+
+	function displayMessages(messages) {
+		if (messages != null) {
+			$('#messages-heading').html('Messages');
+			let $context = $('#messages');
+			$context.empty();
+
+			for (var i = 0; i < messages.length; i++) {
+				$context.prepend(
+					`<a href="/User/ProfilePage/${messages[i].FromId}"><h3>${messages[i].From}</h3></a>
+					<p class="time-stamp">${messages[i].TimeStamp}</p><br /><br />
+					<pre class="message">${messages[i].Text}</pre>`
+				);
+			}
+		}
+	}
+});
+		</script>
+	}
+	else
+	{
+		<h1>Profile not found</h1>
+		<p>The profile page you're looking for doesn't exist.</p>
+	}
+
+</div>
+
+@section scripts {
+	@Scripts.Render("~/bundles/jqueryval")
+}
